@@ -1,6 +1,6 @@
-# Chapter 02 — Thread Synchronization in Python
+# Chapter 01 — Getting Started with Parallel Computing and Python
 
-This project demonstrates core thread synchronization mechanisms in Python using the built-in `threading` module. Each file is a self-contained example showing a different concept.
+This chapter covers the foundational concepts of parallel computing and introduces Python as a tool for parallel programming. The code files demonstrate core Python concepts and compare serial vs multithreading vs multiprocessing execution.
 
 ---
 
@@ -8,247 +8,253 @@ This project demonstrates core thread synchronization mechanisms in Python using
 
 | File | Concept | Description |
 |------|---------|-------------|
-| `Thread_definition.py` | Basic Thread Creation | Creates 10 threads sequentially using a target function |
-| `Thread_determine.py` | Thread Naming | Creates named threads and tracks their start/exit |
-| `MyThreadClass.py` | Thread Subclassing | Defines a custom Thread class with name and duration |
-| `MyThreadClass_lock.py` | Lock (full block) | Uses a Lock to make threads run one at a time (serialized) |
-| `MyThreadClass_lock_2.py` | Lock (print only) | Locks only the print section; sleep runs concurrently |
-| `Rlock.py` | RLock (Reentrant Lock) | A Box class uses RLock to allow nested locking safely |
-| `Semaphore.py` | Semaphore | Consumer waits on semaphore; producer releases it after producing |
-| `Condition.py` | Condition | Producer/Consumer coordinate via `wait()` and `notify()` |
-| `Event.py` | Event | Producer sets an event; consumer waits on it before consuming |
-| `Barrier.py` | Barrier | Three runner threads must all reach the barrier before proceeding |
+| `dir.py` | Help & Flow | Checks if a number is positive/negative/zero; sums a list using a for loop |
+| `flow.py` | Flow Control | Demonstrates `if/elif/else`, `for` loop, and `while` loop |
+| `lists.py` | Data Types | Shows usage of lists, dictionaries, tuples, and function references |
+| `classes.py` | OOP / Classes | Demonstrates class variables, instance variables, and inheritance |
+| `do_something.py` | Functions | Helper function that generates random numbers into a list |
+| `file.py` | File I/O | Writes and reads a text file using `open()` |
+| `serial_test.py` | Serial Execution | Runs `do_something()` 10 times sequentially and measures time |
+| `multithreading_test.py` | Multithreading | Runs `do_something()` across 10 threads and measures time |
+| `multiprocessing_test.py` | Multiprocessing | Runs `do_something()` across 10 processes and measures time |
+| `thread_and_processes.py` | Combined Comparison | Compares multithreading vs multiprocessing in a single script |
 
 ---
 
-## 1. `Thread_definition.py` — Basic Thread Creation
+## 1. `dir.py` — Help Functions & Basic Flow
 
 ### Description
-Creates 10 threads, each calling `my_func()` with a thread number. Threads are started and immediately joined one by one (sequential behavior despite threading).
+Checks whether a number is positive, negative, or zero using `if/elif/else`. Also sums a list of numbers using a `for` loop.
 
 ### Key Points
-- Uses `threading.Thread(target=..., args=...)`
-- `t.join()` is called right after `t.start()` — threads run one at a time here
+- Demonstrates Python's `if/elif/else` conditional structure
+- Shows iteration over a list with `for`
+- Named `dir.py` as it relates to Python's built-in exploration tools (`dir()`, `help()`)
 
 ### Sample Output
 ```
-my_func called by thread N°0
-my_func called by thread N°1
-...
-my_func called by thread N°9
+Positive number
+The sum is 83
 ```
 
 ---
 
-## 2. `Thread_determine.py` — Named Threads
+## 2. `flow.py` — Flow Control
 
 ### Description
-Three functions (`function_A`, `function_B`, `function_C`) each sleep for 2 seconds. Threads are named and run concurrently.
+Covers all three major flow control structures in Python: `if/elif/else`, `for` loop, and `while` loop.
 
 ### Key Points
-- Uses `threading.currentThread().getName()` to identify threads
-- All three threads start together and finish around the same time (~2 seconds total)
+- `if/elif/else` — conditional branching
+- `for` loop — iterates over a list to compute sum
+- `while` loop — adds natural numbers from 1 to n
 
 ### Sample Output
 ```
-function_A --> starting
-function_B --> starting
-function_C --> starting
-function_A --> exiting
-function_B --> exiting
-function_C --> exiting
+Positive number
+The sum is 83
+The sum is 55
 ```
 
 ---
 
-## 3. `MyThreadClass.py` — Custom Thread Class
+## 3. `lists.py` — Data Types (Lists, Dicts, Tuples)
 
 ### Description
-Defines `MyThreadClass` by subclassing `Thread`. Each thread sleeps for a random duration (1–10 seconds). All 9 threads run concurrently.
+Demonstrates Python's core data structures: lists (mutable), dictionaries (key-value), tuples (immutable), and assigning functions to variables.
 
 ### Key Points
-- Overrides `run()` method
-- Shows process ID using `os.getpid()` — all threads share the same PID
-- Total runtime ≈ longest thread's duration (parallel execution)
+- Lists support indexing and modification (`mylist[0] = ...`)
+- Negative indexing (`mylist[-1]`) accesses from the end
+- Dictionaries store key-value pairs; values can be updated
+- Tuples are immutable — cannot be changed after creation
+- Functions are first-class objects: `myfunc = len`
 
 ### Sample Output
 ```
----> Thread#1 running, belonging to process ID 12345
----> Thread#2 running, belonging to process ID 12345
-...
----> Thread#3 over
-End
---- 9.02 seconds ---
+yet element 1
+3.15
+{'Key 1': 'value 1', 2: 3, 'pi': 3.14}
+3.15
+(1, 2, 3)
+3
 ```
 
 ---
 
-## 4. `MyThreadClass_lock.py` — Lock (Entire Run Block)
+## 4. `classes.py` — OOP and Inheritance
 
 ### Description
-Same as `MyThreadClass.py` but wraps the **entire** `run()` method in a `threading.Lock()`. This forces threads to execute one at a time.
+Demonstrates Python classes with class-level variables, instance variables, a method, and inheritance via `AnotherClass`.
 
 ### Key Points
-- `threadLock.acquire()` at start of `run()`, `threadLock.release()` at end
-- Threads are serialized — no concurrency
-- Total runtime ≈ sum of all sleep durations
-
-### Difference from `MyThreadClass.py`
-| Without Lock | With Lock |
-|---|---|
-| All threads run in parallel | Threads run one after another |
-| Fast (~max duration) | Slow (~sum of durations) |
-
----
-
-## 5. `MyThreadClass_lock_2.py` — Lock (Print Only)
-
-### Description
-Lock is acquired only around the **print statement**, then released before `sleep()`. This allows concurrent sleeping while keeping output clean.
-
-### Key Points
-- Lock released before `time.sleep()` — so sleep runs in parallel
-- Only the print section is protected
-- Best balance: clean output + fast execution
-
-### Why this is better than `lock.py`
-Locking the entire block (including sleep) wastes time. Releasing the lock before sleep lets other threads run while this one sleeps.
-
----
-
-## 6. `Rlock.py` — Reentrant Lock
-
-### Description
-A `Box` class tracks items. `add()` and `remove()` both call `execute()` internally — each acquiring the same `RLock`. Two threads (adder and remover) modify the box concurrently.
-
-### Key Points
-- Uses `threading.RLock()` instead of `threading.Lock()`
-- Same thread can acquire the lock multiple times without deadlocking
-- `with self.lock:` used as a context manager (cleaner syntax)
-
-### Why RLock?
-With a normal `Lock`, calling `execute()` from inside `add()` (which already holds the lock) would cause a **deadlock**. RLock allows re-entry by the same thread.
+- `common` is a class variable (shared across all instances)
+- Changing `Myclass.common` affects all instances unless overridden at instance level
+- Setting `instance.common = 10` creates an instance-level copy — does not affect other instances
+- `AnotherClass` inherits from `Myclass` and reuses `myfunction()`
+- Dynamic attributes can be added to instances at runtime: `instance.test = 10`
 
 ### Sample Output
 ```
-N° 15 items to ADD
-N° 7 items to REMOVE
-ADDED one item --> 14 items to ADD
-REMOVED one item --> 6 items to REMOVE
-...
+instance.myfunction(1, 2) 3
+instance.common  10
+instance2.common  10
+instance.common  30
+instance2.common  30
+instance.common  10
+instance2.common  30
+instance.common  10
+instance2.common  50
+hello
+instance.myfunction (1, 2)  3
+instance.test  10
 ```
 
 ---
 
-## 7. `Semaphore.py` — Semaphore (Producer/Consumer)
+## 5. `do_something.py` — Helper Function
 
 ### Description
-A semaphore initialized to `0` blocks the consumer until the producer calls `release()`. Runs 10 producer-consumer pairs.
+A reusable function that fills a list with `count` random floating-point numbers between 0 and 1. Used by all three performance test scripts.
 
 ### Key Points
-- `threading.Semaphore(0)` — consumer blocks immediately on `acquire()`
-- Producer sleeps 3 seconds, generates a random item, then calls `semaphore.release()`
-- Consumer wakes up and reads the item
+- Uses `random.random()` to generate floats in range [0.0, 1.0)
+- Appends results to a passed-in list
+- Imported by `serial_test.py`, `multithreading_test.py`, and `multiprocessing_test.py`
+
+---
+
+## 6. `file.py` — File I/O
+
+### Description
+Opens a file in write mode, writes two lines, closes it, reopens in read mode, and prints the content.
+
+### Key Points
+- `open('test.txt', 'w')` — creates or overwrites a file
+- `f.write(...)` — writes a string to the file
+- `f.read()` — reads entire file content as a string
+- Always call `f.close()` after use, or use `with open(...) as f:` for safer handling
 
 ### Sample Output
 ```
-Consumer is waiting
-Producer notify: item number 742
-Consumer notify: item number 742
-...
+first line of file 
+second line of file 
 ```
 
 ---
 
-## 8. `Condition.py` — Condition Variable
+## 7. `serial_test.py` — Serial Execution
 
 ### Description
-A producer adds items to a list; a consumer removes them. A `Condition` object coordinates access — if the list is empty, consumer waits; if full (10 items), producer waits.
+Runs `do_something()` 10 times in a simple `for` loop with no threads or processes. Measures total execution time as a baseline.
 
 ### Key Points
-- Uses `threading.Condition()` with `wait()` and `notify()`
-- `with condition:` ensures the lock is held during checks
-- Producer runs every 0.5s; consumer runs every 2s
+- Each iteration creates a new list and fills it with 10 million random numbers
+- Completely sequential — one task finishes before the next begins
+- Used as the performance baseline for comparison
 
 ### Sample Output
 ```
-Producer  INFO     total items 1
-Producer  INFO     total items 2
-Consumer  INFO     consumed 1 item
-Producer  INFO     total items 2
-...
+List processing complete.
+serial time= 38.45
 ```
 
 ---
 
-## 9. `Event.py` — Event
+## 8. `multithreading_test.py` — Multithreading
 
 ### Description
-Producer generates 5 random items and signals the consumer using `event.set()`. Consumer waits on `event.wait()` before popping an item.
+Creates 10 threads, each running `do_something()` with 10 million numbers, and measures total time.
 
 ### Key Points
-- `threading.Event()` — simple one-shot signal mechanism
-- `event.set()` wakes the consumer; `event.clear()` resets it immediately after
-- Consumer loops indefinitely; producer runs 5 times then stops
+- Uses `threading.Thread(target=...)`
+- Due to Python's **GIL (Global Interpreter Lock)**, CPU-bound threads cannot run truly in parallel
+- Time is similar to or even slightly worse than serial for this CPU-bound task
+- Threading is better suited for **I/O-bound** tasks (file reads, network calls)
 
 ### Sample Output
 ```
-Producer notify: item 83 appended by Thread-1
-Consumer notify: 83 popped by Thread-2
-Producer notify: item 47 appended by Thread-1
-Consumer notify: 47 popped by Thread-2
-...
+List processing complete.
+multithreading time= 40.12
 ```
 
 ---
 
-## 10. `Barrier.py` — Barrier
+## 9. `multiprocessing_test.py` — Multiprocessing
 
 ### Description
-Three runner threads (Huey, Dewey, Louie) each sleep for a random time (2–5 seconds), then call `finish_line.wait()`. No runner "finishes" until all have reached the barrier.
+Creates 10 separate processes, each running `do_something()` with 10 million numbers. Each process has its own memory and Python interpreter.
 
 ### Key Points
-- `threading.Barrier(n)` — blocks each thread until `n` threads have called `wait()`
-- Simulates a race where all runners must reach the finish line before results are shown
-- Uses `ctime()` to timestamp each arrival
+- Uses `multiprocessing.Process(target=..., args=...)`
+- Bypasses the GIL — achieves true parallelism on multi-core systems
+- Each process has its own `out_list` — results are not shared back to the main process
+- Significantly faster than serial and threading for CPU-bound tasks
 
 ### Sample Output
 ```
-START RACE!!!!
-Louie reached the barrier at: Thu Apr  2 12:00:02
-Dewey reached the barrier at: Thu Apr  2 12:00:03
-Huey reached the barrier at: Thu Apr  2 12:00:05
-Race over!
+List processing complete.
+multiprocesses time= 9.87
 ```
 
 ---
 
-## Synchronization Mechanisms — Summary
+## 10. `thread_and_processes.py` — Combined Comparison
 
-| Mechanism | Class | Blocks? | Use Case |
-|-----------|-------|---------|----------|
-| Lock | `threading.Lock` | Yes (one thread) | Protect shared resource |
-| RLock | `threading.RLock` | Yes (reentrant) | Nested locking in same thread |
-| Semaphore | `threading.Semaphore` | Yes (count-based) | Limit concurrent access |
-| Condition | `threading.Condition` | Yes (until notify) | Producer/consumer coordination |
-| Event | `threading.Event` | Yes (until set) | Simple signal between threads |
-| Barrier | `threading.Barrier` | Yes (until all arrive) | Synchronize group of threads |
+### Description
+Runs multithreading and multiprocessing back-to-back in a single script for direct side-by-side comparison. Serial section is included but commented out.
+
+### Key Points
+- Serial section is wrapped in `""" ... """` — uncomment to enable it
+- Defines its own `do_something()` locally (independent of `do_something.py`)
+- Directly shows the performance gap between threading and multiprocessing
+- Best file to run when demonstrating the GIL's impact in class
+
+### Sample Output
+```
+List processing complete.
+threading time= 41.23
+List processing complete.
+processes time= 10.05
+```
+
+---
+
+## Performance Comparison Summary
+
+| Method | GIL Affected? | True Parallelism? | Best For | Expected Speed |
+|--------|--------------|-------------------|----------|----------------|
+| Serial | N/A | No | Baseline | Slowest |
+| Multithreading | Yes | No (CPU-bound) | I/O-bound tasks | Similar to serial |
+| Multiprocessing | No | Yes | CPU-bound tasks | Fastest |
+
+> **Key Insight:** For CPU-bound tasks like generating millions of random numbers, multiprocessing is significantly faster than multithreading because it bypasses Python's GIL by using separate processes.
+
+---
+
+## Theory Concepts Covered
+
+- **Flynn's Taxonomy** — SISD, MISD, SIMD, MIMD architectures
+- **Memory Organization** — Shared memory, distributed memory, NUMA, clusters, heterogeneous systems
+- **Parallel Programming Models** — Shared memory, multithread, message passing, data-parallel
+- **Program Design Steps** — Task decomposition, assignment, agglomeration, static/dynamic mapping
+- **Performance Metrics** — Speedup `S(p) = T(1)/T(p)`, efficiency `E(p) = S(p)/p`, Amdahl's Law, Gustafson's Law
+- **GIL** — Why Python threads don't speed up CPU-bound code
 
 ---
 
 ## How to Run
 
 ```bash
-python Thread_definition.py
-python Thread_determine.py
-python MyThreadClass.py
-python MyThreadClass_lock.py
-python MyThreadClass_lock_2.py
-python Rlock.py
-python Semaphore.py
-python Condition.py
-python Event.py
-python Barrier.py
+python dir.py
+python flow.py
+python lists.py
+python classes.py
+python file.py
+python serial_test.py
+python multithreading_test.py
+python multiprocessing_test.py
+python thread_and_processes.py
 ```
 
-> **Tip:** Run `MyThreadClass.py` and `MyThreadClass_lock.py` back to back and compare the total execution times to clearly see the impact of locking.
+> **Note:** `serial_test.py`, `multithreading_test.py`, and `multiprocessing_test.py` all require `do_something.py` to be present in the same folder.
