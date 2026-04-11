@@ -1,10 +1,10 @@
 # Chapter 01 — Getting Started with Parallel Computing and Python
 
-This chapter covers the foundational concepts of parallel computing and introduces Python as a tool for parallel programming. The code files demonstrate core Python concepts and compare serial vs multithreading vs multiprocessing execution.
+> Serial vs Threading vs Multiprocessing — a hands-on comparison exploring Python's GIL and true parallelism.
 
 ---
 
-## Files Overview
+## 📁 Files Overview
 
 | File | Concept | Description |
 |------|---------|-------------|
@@ -21,240 +21,264 @@ This chapter covers the foundational concepts of parallel computing and introduc
 
 ---
 
-## 1. `dir.py` — Help Functions & Basic Flow
+## 🗂️ File Dependency Map
 
-### Description
-Checks whether a number is positive, negative, or zero using `if/elif/else`. Also sums a list of numbers using a `for` loop.
+```mermaid
+graph TD
+    DS[do_something.py\nGenerates 10M random floats]
 
-### Key Points
-- Demonstrates Python's `if/elif/else` conditional structure
-- Shows iteration over a list with `for`
-- Named `dir.py` as it relates to Python's built-in exploration tools (`dir()`, `help()`)
+    DS --> ST[serial_test.py\nSequential - ~38s]
+    DS --> MT[multithreading_test.py\nThreads - ~40s]
+    DS --> MP[multiprocessing_test.py\nProcesses - ~10s]
 
-### Sample Output
-```
-Positive number
-The sum is 83
-```
+    TP[thread_and_processes.py\nSide-by-side comparison]
 
----
+    subgraph Basics
+        D[dir.py]
+        F[flow.py]
+        L[lists.py]
+        C[classes.py]
+        FI[file.py]
+    end
 
-## 2. `flow.py` — Flow Control
+    subgraph Performance Tests
+        ST
+        MT
+        MP
+        TP
+    end
 
-### Description
-Covers all three major flow control structures in Python: `if/elif/else`, `for` loop, and `while` loop.
-
-### Key Points
-- `if/elif/else` — conditional branching
-- `for` loop — iterates over a list to compute sum
-- `while` loop — adds natural numbers from 1 to n
-
-### Sample Output
-```
-Positive number
-The sum is 83
-The sum is 55
-```
-
----
-
-## 3. `lists.py` — Data Types (Lists, Dicts, Tuples)
-
-### Description
-Demonstrates Python's core data structures: lists (mutable), dictionaries (key-value), tuples (immutable), and assigning functions to variables.
-
-### Key Points
-- Lists support indexing and modification (`mylist[0] = ...`)
-- Negative indexing (`mylist[-1]`) accesses from the end
-- Dictionaries store key-value pairs; values can be updated
-- Tuples are immutable — cannot be changed after creation
-- Functions are first-class objects: `myfunc = len`
-
-### Sample Output
-```
-yet element 1
-3.15
-{'Key 1': 'value 1', 2: 3, 'pi': 3.14}
-3.15
-(1, 2, 3)
-3
+    style DS fill:#064e3b,color:#6ee7b7,stroke:#10b981
+    style ST fill:#1e3a5f,color:#93c5fd,stroke:#2563eb
+    style MT fill:#2d1b69,color:#c4b5fd,stroke:#7c3aed
+    style MP fill:#064e3b,color:#6ee7b7,stroke:#10b981
+    style TP fill:#78350f,color:#fcd34d,stroke:#f59e0b
 ```
 
 ---
 
-## 4. `classes.py` — OOP and Inheritance
+## ⏱️ Execution Flow Comparison
 
-### Description
-Demonstrates Python classes with class-level variables, instance variables, a method, and inheritance via `AnotherClass`.
+```mermaid
+gantt
+    title Execution Timeline — 10 Tasks (CPU-bound)
+    dateFormat  X
+    axisFormat  t=%ss
 
-### Key Points
-- `common` is a class variable (shared across all instances)
-- Changing `Myclass.common` affects all instances unless overridden at instance level
-- Setting `instance.common = 10` creates an instance-level copy — does not affect other instances
-- `AnotherClass` inherits from `Myclass` and reuses `myfunction()`
-- Dynamic attributes can be added to instances at runtime: `instance.test = 10`
+    section 🔵 Serial
+    Task 1          :s1, 0, 4
+    Task 2          :s2, 4, 8
+    Task 3          :s3, 8, 12
+    Task 4          :s4, 12, 16
+    Task 5          :s5, 16, 20
+    Task 6          :s6, 20, 24
+    Task 7          :s7, 24, 28
+    Task 8          :s8, 28, 32
+    Task 9          :s9, 32, 36
+    Task 10         :s10, 36, 40
 
-### Sample Output
+    section 🟣 Threading (GIL)
+    Th-1 running    :t1, 0, 40
+    Th-2 wait+run   :t2, 1, 40
+    Th-3 wait+run   :t3, 2, 40
+
+    section 🟢 Multiprocessing
+    Process 1       :p1, 0, 10
+    Process 2       :p2, 0, 10
+    Process 3       :p3, 0, 10
+    Process 4       :p4, 0, 10
 ```
-instance.myfunction(1, 2) 3
-instance.common  10
-instance2.common  10
-instance.common  30
-instance2.common  30
-instance.common  10
-instance2.common  30
-instance.common  10
-instance2.common  50
-hello
-instance.myfunction (1, 2)  3
-instance.test  10
+
+> 🔵 **Serial** — ek kaam khatam, phir agla. Total ~38s  
+> 🟣 **Threading** — sab threads chalte hain par GIL ki wajah se sirf ek hi execute hota hai. Total ~40s  
+> 🟢 **Multiprocessing** — sab processes truly parallel chalte hain. Total ~10s
+
+---
+
+## 🔒 GIL (Global Interpreter Lock) — Kya hota hai?
+
+```mermaid
+flowchart LR
+    subgraph THREADING ["🔴 Multithreading — GIL Bottleneck"]
+        direction TB
+        G[🔒 GIL\nSirf 1 thread\nek waqt]
+        T1[Thread 1\n✅ Running]
+        T2[Thread 2\n⏸ Waiting]
+        T3[Thread 3\n⏸ Waiting]
+        T4[Thread 4\n⏸ Waiting]
+        G --> T1
+        G -.->|blocked| T2
+        G -.->|blocked| T3
+        G -.->|blocked| T4
+    end
+
+    subgraph MULTIPROC ["🟢 Multiprocessing — True Parallel"]
+        direction TB
+        C0[Core 0\n✅ Process 1]
+        C1[Core 1\n✅ Process 2]
+        C2[Core 2\n✅ Process 3]
+        C3[Core 3\n✅ Process 4]
+    end
+
+    style THREADING fill:#1a0a0a,stroke:#ef4444,color:#fca5a5
+    style MULTIPROC fill:#022c1a,stroke:#10b981,color:#6ee7b7
+    style G fill:#7f1d1d,color:#fca5a5,stroke:#ef4444
+    style T1 fill:#14532d,color:#86efac,stroke:#22c55e
+    style T2 fill:#1c1917,color:#78716c,stroke:#57534e
+    style T3 fill:#1c1917,color:#78716c,stroke:#57534e
+    style T4 fill:#1c1917,color:#78716c,stroke:#57534e
+    style C0 fill:#14532d,color:#86efac,stroke:#22c55e
+    style C1 fill:#14532d,color:#86efac,stroke:#22c55e
+    style C2 fill:#14532d,color:#86efac,stroke:#22c55e
+    style C3 fill:#14532d,color:#86efac,stroke:#22c55e
+```
+
+| | Threading | Multiprocessing |
+|---|---|---|
+| GIL | ❌ Affected (bottleneck) | ✅ Bypassed |
+| True Parallelism | ❌ No (CPU-bound) | ✅ Yes |
+| Memory | Shared | Separate per process |
+| Best For | I/O-bound tasks | CPU-bound tasks |
+
+---
+
+## 📊 Performance Benchmark
+
+```mermaid
+xychart-beta horizontal
+    title "Execution Time — 10M floats × 10 tasks (seconds)"
+    x-axis ["Serial", "Multithreading", "Multiprocessing"]
+    y-axis "Time (seconds)" 0 --> 45
+    bar [38.45, 40.12, 9.87]
+```
+
+> ✅ **Multiprocessing is ~4× faster** than serial on a 4-core machine.  
+> ⚠️ Multithreading is even **slower** than serial due to GIL switching overhead.
+
+---
+
+## 🧠 Flynn's Taxonomy
+
+```mermaid
+quadrantChart
+    title Flynn's Taxonomy — Parallel Architecture Classification
+    x-axis Single Data --> Multiple Data
+    y-axis Single Instruction --> Multiple Instruction
+    quadrant-1 MIMD
+    quadrant-2 SIMD
+    quadrant-3 SISD
+    quadrant-4 MISD
+    SISD - Classic CPU: [0.25, 0.25]
+    SIMD - GPU / AVX: [0.75, 0.25]
+    MIMD - Multicore / Clusters: [0.75, 0.75]
+    MISD - Fault Tolerant Systems: [0.25, 0.75]
+```
+
+| Taxonomy | Full Name | Description | Example |
+|----------|-----------|-------------|---------|
+| **SISD** | Single Instruction, Single Data | Traditional serial — one CPU, one stream | Classic single-core CPU |
+| **SIMD** | Single Instruction, Multiple Data | Same instruction on many data elements | GPU, SSE, AVX |
+| **MISD** | Multiple Instruction, Single Data | Multiple instructions, same data — rare | Fault-tolerant systems |
+| **MIMD** | Multiple Instruction, Multiple Data | Most common parallel model | Multicore CPUs, clusters |
+
+---
+
+## 📐 Performance Metrics
+
+```mermaid
+flowchart TD
+    A[Program runs on\np processors] --> B[Measure T_1\nSerial time]
+    A --> C[Measure T_p\nParallel time]
+
+    B --> D["⚡ Speedup\nS(p) = T(1) / T(p)"]
+    C --> D
+
+    D --> E["📊 Efficiency\nE(p) = S(p) / p"]
+    D --> F["📉 Amdahl's Law\nS = 1 / (f + (1-f)/p)\nLimited by serial fraction f"]
+    D --> G["📈 Gustafson's Law\nS = p - f·(p-1)\nOptimistic — scales with problem size"]
+
+    style A fill:#1e3a5f,color:#93c5fd,stroke:#2563eb
+    style B fill:#1c1917,color:#d6d3d1,stroke:#57534e
+    style C fill:#1c1917,color:#d6d3d1,stroke:#57534e
+    style D fill:#064e3b,color:#6ee7b7,stroke:#10b981
+    style E fill:#2d1b69,color:#c4b5fd,stroke:#7c3aed
+    style F fill:#78350f,color:#fcd34d,stroke:#f59e0b
+    style G fill:#1e3a5f,color:#93c5fd,stroke:#2563eb
+```
+
+| Formula | Name | Meaning |
+|---------|------|---------|
+| `S(p) = T(1) / T(p)` | Speedup | Kitna fast hua parallel se? |
+| `E(p) = S(p) / p` | Efficiency | Processors kitne efficiently use hue? |
+| `S = 1 / (f + (1-f)/p)` | Amdahl's Law | Serial fraction `f` speedup ko limit karta hai |
+| `S = p - f(p-1)` | Gustafson's Law | Problem size bade to parallel portion dominant hota hai |
+
+---
+
+## 🔄 Python Class Inheritance Flow
+
+```mermaid
+classDiagram
+    class Myclass {
+        +int common = 10
+        +int myvariable
+        +myfunction(arg1, arg2)
+    }
+
+    class AnotherClass {
+        +myfunction(arg1, arg2)
+    }
+
+    Myclass <|-- AnotherClass : inherits
 ```
 
 ---
 
-## 5. `do_something.py` — Helper Function
+## 🗃️ File I/O Flow (`file.py`)
 
-### Description
-A reusable function that fills a list with `count` random floating-point numbers between 0 and 1. Used by all three performance test scripts.
+```mermaid
+flowchart LR
+    A[🖊️ open\ntest.txt - w] --> B[f.write\nfirst line]
+    B --> C[f.write\nsecond line]
+    C --> D[f.close]
+    D --> E[📖 open\ntest.txt - r]
+    E --> F[f.read]
+    F --> G[🖥️ print output]
 
-### Key Points
-- Uses `random.random()` to generate floats in range [0.0, 1.0)
-- Appends results to a passed-in list
-- Imported by `serial_test.py`, `multithreading_test.py`, and `multiprocessing_test.py`
-
----
-
-## 6. `file.py` — File I/O
-
-### Description
-Opens a file in write mode, writes two lines, closes it, reopens in read mode, and prints the content.
-
-### Key Points
-- `open('test.txt', 'w')` — creates or overwrites a file
-- `f.write(...)` — writes a string to the file
-- `f.read()` — reads entire file content as a string
-- Always call `f.close()` after use, or use `with open(...) as f:` for safer handling
-
-### Sample Output
-```
-first line of file 
-second line of file 
+    style A fill:#1e3a5f,color:#93c5fd,stroke:#2563eb
+    style E fill:#064e3b,color:#6ee7b7,stroke:#10b981
+    style G fill:#2d1b69,color:#c4b5fd,stroke:#7c3aed
 ```
 
 ---
 
-## 7. `serial_test.py` — Serial Execution
-
-### Description
-Runs `do_something()` 10 times in a simple `for` loop with no threads or processes. Measures total execution time as a baseline.
-
-### Key Points
-- Each iteration creates a new list and fills it with 10 million random numbers
-- Completely sequential — one task finishes before the next begins
-- Used as the performance baseline for comparison
-
-### Sample Output
-```
-List processing complete.
-serial time= 38.45
-```
-
----
-
-## 8. `multithreading_test.py` — Multithreading
-
-### Description
-Creates 10 threads, each running `do_something()` with 10 million numbers, and measures total time.
-
-### Key Points
-- Uses `threading.Thread(target=...)`
-- Due to Python's **GIL (Global Interpreter Lock)**, CPU-bound threads cannot run truly in parallel
-- Time is similar to or even slightly worse than serial for this CPU-bound task
-- Threading is better suited for **I/O-bound** tasks (file reads, network calls)
-
-### Sample Output
-```
-List processing complete.
-multithreading time= 40.12
-```
-
----
-
-## 9. `multiprocessing_test.py` — Multiprocessing
-
-### Description
-Creates 10 separate processes, each running `do_something()` with 10 million numbers. Each process has its own memory and Python interpreter.
-
-### Key Points
-- Uses `multiprocessing.Process(target=..., args=...)`
-- Bypasses the GIL — achieves true parallelism on multi-core systems
-- Each process has its own `out_list` — results are not shared back to the main process
-- Significantly faster than serial and threading for CPU-bound tasks
-
-### Sample Output
-```
-List processing complete.
-multiprocesses time= 9.87
-```
-
----
-
-## 10. `thread_and_processes.py` — Combined Comparison
-
-### Description
-Runs multithreading and multiprocessing back-to-back in a single script for direct side-by-side comparison. Serial section is included but commented out.
-
-### Key Points
-- Serial section is wrapped in `""" ... """` — uncomment to enable it
-- Defines its own `do_something()` locally (independent of `do_something.py`)
-- Directly shows the performance gap between threading and multiprocessing
-- Best file to run when demonstrating the GIL's impact in class
-
-### Sample Output
-```
-List processing complete.
-threading time= 41.23
-List processing complete.
-processes time= 10.05
-```
-
----
-
-## Performance Comparison Summary
-
-| Method | GIL Affected? | True Parallelism? | Best For | Expected Speed |
-|--------|--------------|-------------------|----------|----------------|
-| Serial | N/A | No | Baseline | Slowest |
-| Multithreading | Yes | No (CPU-bound) | I/O-bound tasks | Similar to serial |
-| Multiprocessing | No | Yes | CPU-bound tasks | Fastest |
-
-> **Key Insight:** For CPU-bound tasks like generating millions of random numbers, multiprocessing is significantly faster than multithreading because it bypasses Python's GIL by using separate processes.
-
----
-
-## Theory Concepts Covered
-
-- **Flynn's Taxonomy** — SISD, MISD, SIMD, MIMD architectures
-- **Memory Organization** — Shared memory, distributed memory, NUMA, clusters, heterogeneous systems
-- **Parallel Programming Models** — Shared memory, multithread, message passing, data-parallel
-- **Program Design Steps** — Task decomposition, assignment, agglomeration, static/dynamic mapping
-- **Performance Metrics** — Speedup `S(p) = T(1)/T(p)`, efficiency `E(p) = S(p)/p`, Amdahl's Law, Gustafson's Law
-- **GIL** — Why Python threads don't speed up CPU-bound code
-
----
-
-## How to Run
+## ▶️ How to Run
 
 ```bash
+# Basic Python concepts
 python dir.py
 python flow.py
 python lists.py
 python classes.py
 python file.py
-python serial_test.py
-python multithreading_test.py
-python multiprocessing_test.py
-python thread_and_processes.py
+
+# Performance tests — do_something.py must be in same folder
+python serial_test.py           # baseline benchmark   ~38s
+python multithreading_test.py   # GIL demo             ~40s
+python multiprocessing_test.py  # true parallelism     ~10s
+python thread_and_processes.py  # side-by-side compare
 ```
 
-> **Note:** `serial_test.py`, `multithreading_test.py`, and `multiprocessing_test.py` all require `do_something.py` to be present in the same folder.
+> ⚠️ `serial_test.py`, `multithreading_test.py`, and `multiprocessing_test.py` — teeno files ke saath `do_something.py` **same folder** mein hona zaroori hai.
+
+---
+
+## 📋 Performance Summary
+
+| Method | GIL Affected? | True Parallelism? | Best For | Time |
+|--------|:---:|:---:|----------|------|
+| Serial | — | ❌ | Baseline | ~38s |
+| Multithreading | ❌ Yes | ❌ No | I/O-bound tasks | ~40s |
+| Multiprocessing | ✅ No | ✅ Yes | CPU-bound tasks | ~10s |
+
+> **Key Insight:** CPU-bound tasks (jaise millions of random numbers generate karna) ke liye multiprocessing best hai kyunki yeh Python ke GIL ko bypass karta hai alag processes use karke.
