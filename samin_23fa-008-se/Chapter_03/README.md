@@ -1,265 +1,327 @@
-# ======================================================================
-# complete_palindrome_demo.py
-# Run this file to see all multiprocessing concepts in action
-# ======================================================================
+# Chapter03: Process-Based Parallel Palindrome 
 
-import multiprocessing
-import time
-import datetime
-from multiprocessing import Barrier, Lock, Pool, Queue
-import os
+This chapter demonstrates how Python’s **`multiprocessing`** module works using a real-world string example — checking whether words are palindromes using the helper function **`reverse_and_check_palindrome()`** from `reversed_string.py`.
 
-# ==================== CORE FUNCTION ====================
+---
 
+##  1. reversed_string.py
+
+### **Purpose**
+
+Defines the core function that reverses a string and checks if it’s a palindrome.
+Serves as the base computational task for all multiprocessing examples.
+
+### **Key Code**
+
+```python
 def reverse_and_check_palindrome(s):
-    """Reverse string and check if palindrome"""
     reversed_s = s[::-1]
-    is_palindrome = (s == reversed_s)
+    is_palindrome = s == reversed_s
     return reversed_s, is_palindrome
+```
 
-# ==================== DEMO 1: PROCESS NAMING ====================
+### **Sample Output**
 
-def demo_naming():
-    print("\n" + "█"*60)
-    print("█ DEMO 1: PROCESS NAMING")
-    print("█"*60)
-    
-    def worker():
-        strings = ['madam', 'apple', 'racecar']
-        for s in strings:
-            rev, is_pal = reverse_and_check_palindrome(s)
-            name = multiprocessing.current_process().name
-            print(f"  [{name}] {s} → {rev} | Palindrome: {is_pal}")
-    
-    # Named process
-    p1 = multiprocessing.Process(name="🎯 Custom-Worker", target=worker)
-    # Auto-named process
-    p2 = multiprocessing.Process(target=worker)
-    
-    p1.start()
-    p2.start()
-    p1.join()
-    p2.join()
-    print("\n  ✅ Named and auto-named processes executed successfully\n")
+```
+Original strings: ['madam', 'apple', 'racecar', 'python', 'level']
 
-# ==================== DEMO 2: SPAWNING MULTIPLE PROCESSES ====================
+Results:
+madam → madam | Palindrome: True
+apple → elppa | Palindrome: False
+racecar → racecar | Palindrome: True
+python → nohtyp | Palindrome: False
+level → level | Palindrome: True
+```
 
-def demo_spawning():
-    print("\n" + "█"*60)
-    print("█ DEMO 2: SPAWNING MULTIPLE PROCESSES")
-    print("█"*60)
-    
-    def worker(pid):
-        strings = ['madam', 'racecar', 'noon']
-        print(f"  🔄 Process {pid} (PID: {os.getpid()}) started")
-        for s in strings:
-            rev, is_pal = reverse_and_check_palindrome(s)
-            print(f"     P{pid}: {s} → {rev} | Palindrome: {is_pal}")
-        print(f"  ✅ Process {pid} finished\n")
-    
-    processes = []
-    for i in range(3):
-        p = multiprocessing.Process(target=worker, args=(i,))
-        processes.append(p)
-        p.start()
-    
-    for p in processes:
-        p.join()
-    
-    print(f"  ✅ All {len(processes)} processes completed\n")
+### **Observation**
 
-# ==================== DEMO 3: PROCESS LIFECYCLE ====================
+The function correctly reverses strings and identifies palindromes.
+This function is imported and used in all subsequent multiprocessing examples.
 
-def demo_lifecycle():
-    print("\n" + "█"*60)
-    print("█ DEMO 3: PROCESS LIFECYCLE (START, TERMINATE, JOIN)")
-    print("█"*60)
-    
-    def long_worker():
-        strings = ['madam', 'apple', 'racecar', 'python', 'level']
-        for s in strings:
-            rev, is_pal = reverse_and_check_palindrome(s)
-            print(f"     {s} → {rev} | Palindrome: {is_pal}")
-            time.sleep(0.3)
-    
-    p = multiprocessing.Process(target=long_worker)
-    
-    print(f"  📊 Before start - Alive: {p.is_alive()}")
-    p.start()
-    print(f"  📊 After start - Alive: {p.is_alive()}")
-    
-    time.sleep(1.5)
-    
-    if p.is_alive():
-        print("  ✂️ Terminating process...")
-        p.terminate()
-    
-    p.join()
-    print(f"  📊 After join - Alive: {p.is_alive()}")
-    print(f"  📊 Exit code: {p.exitcode}")
-    print("  ✅ Lifecycle management successful\n")
+---
 
-# ==================== DEMO 4: DAEMON VS NON-DAEMON ====================
+##  2. naming_processes.py
 
-def demo_daemon():
-    print("\n" + "█"*60)
-    print("█ DEMO 4: DAEMON VS NON-DAEMON PROCESSES")
-    print("█"*60)
-    
-    def daemon_worker():
-        strings = ['madam', 'racecar']
-        for s in strings:
-            rev, is_pal = reverse_and_check_palindrome(s)
-            print(f"     [DAEMON] {s} → {rev} | Palindrome: {is_pal}")
-            time.sleep(0.5)
-        print("     [DAEMON] This may not print!")
-    
-    def normal_worker():
-        strings = ['python', 'level', 'noon']
-        for s in strings:
-            rev, is_pal = reverse_and_check_palindrome(s)
-            print(f"     [NORMAL] {s} → {rev} | Palindrome: {is_pal}")
-            time.sleep(0.3)
-        print("     [NORMAL] This will always print")
-    
-    daemon = multiprocessing.Process(target=daemon_worker)
-    daemon.daemon = True
-    
-    normal = multiprocessing.Process(target=normal_worker)
-    normal.daemon = False
-    
-    start = time.time()
-    daemon.start()
-    normal.start()
-    
-    normal.join()
-    
-    print(f"\n  ⏱️ Main finished at {time.time() - start:.2f}s")
-    print("  ✅ Daemon stopped with main; normal completed fully\n")
+### **Purpose**
 
-# ==================== DEMO 5: BARRIER SYNCHRONIZATION ====================
+To demonstrate how to create and name processes explicitly and observe their execution when performing palindrome checks.
 
-def demo_barrier():
-    print("\n" + "█"*60)
-    print("█ DEMO 5: BARRIER SYNCHRONIZATION")
-    print("█"*60)
-    
-    def worker(barrier, lock, wid):
-        print(f"  [{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] P{wid} waiting at barrier")
-        barrier.wait()
-        print(f"  [{datetime.now().strftime('%H:%M:%S.%f')[:-3]}] P{wid} passed barrier")
-        
-        strings = ['madam', 'racecar', 'level']
-        with lock:
-            for s in strings:
-                rev, is_pal = reverse_and_check_palindrome(s)
-                print(f"     P{wid}: {s} → {rev} | Palindrome: {is_pal}")
-    
-    barrier = Barrier(3)
-    lock = Lock()
-    
-    processes = []
-    for i in range(3):
-        p = multiprocessing.Process(target=worker, args=(barrier, lock, i))
-        processes.append(p)
-        p.start()
-    
-    for p in processes:
-        p.join()
-    
-    print("  ✅ All processes synchronized with barrier\n")
+### **Key Code**
 
-# ==================== DEMO 6: PROCESS POOL ====================
+```python
+process_with_name = multiprocessing.Process(
+    name="Palindrome Process 1",
+    target=myFunc
+)
+process_with_default_name = multiprocessing.Process(
+    target=myFunc
+)
+```
 
-def demo_pool():
-    print("\n" + "█"*60)
-    print("█ DEMO 6: PROCESS POOL FOR PARALLEL EXECUTION")
-    print("█"*60)
-    
-    test_strings = [
-        'madam', 'apple', 'racecar', 'python',
-        'level', 'noon', 'rotor', 'banana',
-        'civic', 'world', 'radar', 'hello'
-    ]
-    
-    print(f"\n  Testing {len(test_strings)} strings with 4 processes...")
-    print("  " + "-"*45)
-    
-    start = time.time()
-    
-    with Pool(processes=4) as pool:
-        results = pool.map(reverse_and_check_palindrome, test_strings)
-    
-    elapsed = time.time() - start
-    
-    for original, (rev, is_pal) in zip(test_strings, results):
-        status = "✓" if is_pal else "✗"
-        print(f"  {status} {original:10} → {rev:10} | Palindrome: {is_pal}")
-    
-    print("  " + "-"*45)
-    pal_count = sum(1 for _, (_, is_pal) in zip(test_strings, results) if is_pal)
-    print(f"  ✅ Completed {len(test_strings)} tasks in {elapsed:.3f}s")
-    print(f"  ✅ Found {pal_count} palindromes out of {len(test_strings)}\n")
+### **Sample Output**
 
-# ==================== DEMO 7: QUEUE COMMUNICATION ====================
+```
+Starting process name = Palindrome Process 1
 
-def demo_queue():
-    print("\n" + "█"*60)
-    print("█ DEMO 7: QUEUE COMMUNICATION")
-    print("█"*60)
-    
-    def producer(queue, strings):
-        for s in strings:
-            rev, is_pal = reverse_and_check_palindrome(s)
-            queue.put((s, rev, is_pal))
-            print(f"     [PRODUCER] Processed: {s}")
-            time.sleep(0.2)
-        queue.put(None)
-    
-    def consumer(queue):
-        while True:
-            item = queue.get()
-            if item is None:
-                break
-            s, rev, is_pal = item
-            print(f"     [CONSUMER] {s} → {rev} | Palindrome: {is_pal}")
-    
-    q = Queue()
-    strings = ['madam', 'apple', 'racecar', 'python', 'level']
-    
-    prod = multiprocessing.Process(target=producer, args=(q, strings))
-    cons = multiprocessing.Process(target=consumer, args=(q,))
-    
-    prod.start()
-    cons.start()
-    
-    prod.join()
-    cons.join()
-    
-    print("  ✅ Queue communication successful\n")
+Original strings: ['madam', 'apple', 'racecar', 'python', 'level']
 
-# ==================== MAIN EXECUTION ====================
+Results:
+madam → madam | Palindrome: True
+apple → elppa | Palindrome: False
+racecar → racecar | Palindrome: True
+python → nohtyp | Palindrome: False
+level → level | Palindrome: True
+Starting process name = Process-2
+...
+Exiting process name = Palindrome Process 1
+```
 
-if __name__ == "__main__":
-    print("\n" + "="*70)
-    print(" 🚀 CHAPTER 03: PROCESS-BASED PARALLEL PALINDROME ")
-    print("="*70)
-    
-    # Run all demonstrations
-    demo_naming()
-    demo_spawning()
-    demo_lifecycle()
-    demo_daemon()
-    demo_barrier()
-    demo_pool()
-    demo_queue()
-    
-    print("="*70)
-    print(" 🎉 ALL DEMONSTRATIONS COMPLETED SUCCESSFULLY! 🎉")
-    print("="*70)
-    print("\n  📚 Key Takeaways:")
-    print("  • Processes can be named and managed individually")
-    print("  • Daemon processes die when main process exits")
-    print("  • Barriers synchronize multiple processes")
-    print("  • Pools provide efficient parallel execution")
-    print("  • Queues enable safe inter-process communication\n")
+### **Observation**
+
+Two processes were started — one explicitly named and one with a default name.
+Both executed the palindrome task concurrently, producing identical outputs.
+
+---
+
+##  3. spawning_processes.py
+
+### **Purpose**
+
+To show how multiple processes can be created dynamically in a loop, each performing independent palindrome checks.
+
+### **Key Code**
+
+```python
+for i in range(6):
+    process = multiprocessing.Process(target=myFunc, args=(i,))
+    process.start()
+    process.join()
+```
+
+### **Sample Output**
+
+```
+Process number: 0 started
+Process 0: madam → madam | Palindrome: True
+Process number: 0 finished
+
+Process number: 1 started
+Process 1: madam → madam | Palindrome: True
+Process number: 1 finished
+...
+Process number: 5 finished
+```
+
+### **Observation**
+
+Six processes were spawned sequentially.
+Each process handled a variable number of strings depending on its index.
+Palindrome detection scaled correctly across all instances.
+
+---
+
+##  4. killing_processes.py
+
+### **Purpose**
+
+To demonstrate how to start, terminate, and join a process performing palindrome checking.
+
+### **Key Code**
+
+```python
+p.start()
+print('Process running:', p.is_alive())
+time.sleep(2)
+if p.is_alive():
+    p.terminate()
+p.join()
+print('Process joined:', p.is_alive())
+```
+
+### **Sample Output**
+
+```
+Process before execution: <Process name='Process-1' ...> False
+
+Results:
+madam → madam | Palindrome: True
+apple → elppa | Palindrome: False
+racecar → racecar | Palindrome: True
+python → nohtyp | Palindrome: False
+level → level | Palindrome: True
+Finished palindrome process
+Process joined: ... False
+Process exit code: 0
+```
+
+### **Observation**
+
+The process executed and completed successfully before being joined.
+Exit code `0` confirms successful execution and clean termination.
+
+---
+
+##  5. run_background_processes_no_daemons.py
+
+### **Purpose**
+
+To differentiate between background (daemon) and foreground (non-daemon) processes when running palindrome checks.
+
+### **Key Code**
+
+```python
+background_process.daemon = False
+no_background_process.daemon = False
+```
+
+### **Sample Output**
+
+```
+Starting background_process
+background_process: madam → madam | Palindrome: True
+...
+Starting NO_background_process
+NO_background_process: noon → noon | Palindrome: True
+...
+Exiting background_process
+Exiting NO_background_process
+```
+
+### **Observation**
+
+Both processes executed independently and printed their results.
+Non-daemon processes completed fully, showing that daemonization did not interrupt execution.
+
+---
+
+## 6. run_background_processes.py
+
+### **Purpose**
+
+To demonstrate daemon vs. non-daemon process behavior and timing when both execute palindrome checks concurrently.
+
+### **Key Code**
+
+```python
+background_process.daemon = True
+no_background_process.daemon = False
+```
+
+### **Sample Output**
+
+```
+Starting background_process
+background_process: madam → madam | Palindrome: True
+Starting NO_background_process
+NO_background_process: python → nohtyp | Palindrome: False
+...
+Exiting NO_background_process
+Main process finished.  Ended at 1.22s
+```
+
+### **Observation**
+
+The daemon process terminated automatically when the main process ended, while the non-daemon process completed normally.
+Execution time demonstrates main-process dependency of daemons.
+
+---
+
+##  7. processes_barrier.py
+
+### **Purpose**
+
+To demonstrate synchronization between processes using **`Barrier`** and **`Lock`** while checking palindromes.
+
+### **Key Code**
+
+```python
+synchronizer = Barrier(2)
+serializer = Lock()
+Process(name='P1 - with_barrier', target=test_with_barrier, args=(synchronizer, serializer)).start()
+```
+
+### **Sample Output**
+
+```
+ P4 - without_barrier started (no barrier):
+noon → noon | Palindrome: True
+...
+[2025-11-08 01:42:12.749957] P2 - with_barrier started:
+madam → madam | Palindrome: True
+...
+[2025-11-08 01:42:12.750012] P1 - with_barrier started:
+madam → madam | Palindrome: True
+...
+```
+
+### **Observation**
+
+Processes using barriers waited for each other before proceeding, ensuring synchronized starts.
+The lock ensured clean, non-overlapping output printing.
+
+---
+
+##  8. process_pool.py
+
+### **Purpose**
+
+To demonstrate parallel palindrome checking using a **`multiprocessing.Pool`** for efficient concurrent execution.
+
+### **Key Code**
+
+```python
+pool = multiprocessing.Pool(processes=4)
+pool_outputs = pool.map(reverse_and_check_palindrome, strings)
+```
+
+### **Sample Output**
+
+```
+=== Process Pool Palindrome Results ===
+madam → madam | Palindrome: True
+apple → elppa | Palindrome: False
+racecar → racecar | Palindrome: True
+python → nohtyp | Palindrome: False
+noon → noon | Palindrome: True
+rotor → rotor | Palindrome: True
+banana → ananab | Palindrome: False
+```
+
+### **Observation**
+
+Workload was evenly distributed among four processes.
+Each process computed palindrome checks concurrently, significantly improving efficiency.
+
+---
+
+##  Summary Table
+
+| Script                                 | Purpose                                 | Success | Key Observation                                        |
+| :------------------------------------- | :-------------------------------------- | :-----: | :----------------------------------------------------- |
+| reversed_string.py                     | Define palindrome function              |    ✅    | Function correctly reverses and compares strings       |
+| naming_processes.py                    | Create and name processes               |    ✅    | Both named and unnamed processes executed successfully |
+| spawning_processes.py                  | Spawn multiple processes in loop        |    ✅    | Scaled palindrome checks across sequential processes   |
+| killing_processes.py                   | Start, terminate, and join processes    |    ✅    | Proper process lifecycle management confirmed          |
+| run_background_processes_no_daemons.py | Compare background and foreground tasks |    ✅    | Both non-daemons completed independently               |
+| run_background_processes.py            | Demonstrate daemon vs non-daemon timing |    ✅    | Daemon stopped early; non-daemon completed fully       |
+| processes_barrier.py                   | Synchronize multiple processes          |    ✅    | Barrier ensured coordinated execution                  |
+| process_pool.py                        | Execute tasks in parallel using Pool    |    ✅   | Efficient workload distribution confirmed              |
+
+---
+
+##  Conclusion
+
+Through palindrome-based tasks, this chapter demonstrated key multiprocessing concepts:
+
+* **Process creation, naming, and termination**
+* **Sequential vs. parallel execution**
+* **Daemon and non-daemon behavior**
+* **Process synchronization using barriers and locks**
+* **Parallel execution using process pools**
+
+---
+
+## Overall Learning
+
+Python’s `multiprocessing` module provides powerful tools for **parallelizing CPU-bound tasks** like palindrome checking.
+Understanding **naming, synchronization, daemonization, and pooling** is essential to designing efficient, scalable multiprocessing applications.
