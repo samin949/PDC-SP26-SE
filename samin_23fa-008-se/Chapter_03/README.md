@@ -166,7 +166,7 @@ called run method in MyProcess-10
 
 ## 5. `killing_processes.py` — Process Lifecycle + Terminate
 
-![Process Lifecycle](images/03_process_lifecycle.png)
+![Process Lifecycle](images/03_process_lifecycle.svg)
 
 ```mermaid
 stateDiagram-v2
@@ -197,7 +197,7 @@ Process exit code: -15
 
 ## 6. `run_background_processes.py` — Daemon vs Non-Daemon
 
-![Daemon vs Non-Daemon](images/05_daemon_vs_nodaemon.png)
+![Daemon vs Non-Daemon](images/05_daemon_vs_nodaemon.svg)
 
 ```mermaid
 flowchart TD
@@ -309,7 +309,7 @@ the queue is empty
 
 ## 10. `processes_barrier.py` — Barrier + Lock
 
-![Barrier Synchronization](images/06_barrier_lock.png)
+![Barrier Synchronization](images/06_barrier_lock.svg)
 
 ```mermaid
 flowchart TD
@@ -338,7 +338,7 @@ process p2 - test_with_barrier    ----> 2024-04-02 12:00:00.201
 
 ## 11. `process_pool.py` — Process Pool
 
-![Process Pool](images/07_process_pool.png)
+![Process Pool](images/07_process_pool.svgg)
 
 ```mermaid
 flowchart TD
@@ -362,7 +362,7 @@ Pool: [0, 1, 4, 9, 16, 25, 36, 49, 64, 81, ..., 9801]
 
 ## 📡 Communication Methods — Pipe vs Queue
 
-![Pipe vs Queue](images/04_pipe_vs_queue.png)
+![Pipe vs Queue](images/04_pipe_vs_queue.svg)
 
 | | `Pipe` | `Queue` |
 |---|---|---|
@@ -375,7 +375,7 @@ Pool: [0, 1, 4, 9, 16, 25, 36, 49, 64, 81, ..., 9801]
 
 ## 🔄 Process Lifecycle — Full Picture
 
-![Process Lifecycle Full](images/03_process_lifecycle.png)
+![Process Lifecycle Full](images/03_process_lifecycle.svg)
 
 ```mermaid
 stateDiagram-v2
