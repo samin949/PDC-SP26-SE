@@ -3,6 +3,8 @@
 This project demonstrates core thread synchronization mechanisms in Python using the built-in `threading` module. Each file is a self-contained example showing a different concept.
 
 ---
+![Chapter 02 — Thread Synchronization in Python](images/thread_sync_diagram.png)
+
 
 ## Files Overview
 
@@ -20,6 +22,7 @@ This project demonstrates core thread synchronization mechanisms in Python using
 | `Barrier.py` | Barrier | Three runner threads must all reach the barrier before proceeding |
 
 ---
+
 
 ## 1. `Thread_definition.py` — Basic Thread Creation
 
